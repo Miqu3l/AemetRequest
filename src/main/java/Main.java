@@ -9,21 +9,28 @@ public class Main {
 
     public static void main(String[] args){
         try {
-            String codiMunicipi = "43028";
-            String dataBuscada = "2024-11-26T00:00:00";
-            String horaBuscada = "02";
-            String periodeBuscat ="0107";
+            //Declaración de variables con los datos de la petición a la Aemet.
+            String codiMunicipi = "43028";  //Código de la población de la Aemet
+            String dataBuscada = "2024-11-26T00:00:00"; //Fecha. (Previsión de 40 horas desde la fecha)
+            String horaBuscada = "02";      //Hora del dia. (Desde las 00 hasta las 23)
+            String periodeBuscat ="0107";   //Franja horario. (Entre las 0107, las 0713, las 1319 y las 1901)
 
+            //Si no encuentra la fecha
             boolean dataTrobada = false;
 
+            //Genera la petición a la Aemet i recibe la respuesta.
             AemetRequest request = new AemetRequest();
             String response = request.aemetForecastRequest(codiMunicipi);
 
+            //Comprueba si la respuesta es correcta.
             if (!AEMET_ERROR.equals(response)) {
+                //Crea un objeto para convertir la respuesta en un objeto AemetResponse.
+                //En este caso, en una lista de objetos, ya que así es el formato de la respuesta de la Aemet
                 ObjectMapper objectMapper = new ObjectMapper();
                 List<AemetResponse> aemetResponses = objectMapper.readValue(response,
                         new TypeReference<List<AemetResponse>>() {});
 
+                //Extrae los datos de la fecha, la hora y la franja horaria introducida en las variable del inicio.
                 AemetResponse aemetResponse = aemetResponses.get(0);
 
                 for (AemetResponse.Prediccion.Dia dia : aemetResponse.getPrediccion().getDia()) {
