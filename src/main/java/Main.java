@@ -4,17 +4,39 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 
 public class Main {
-
+    //Error en la resposta
     private static final String AEMET_ERROR = "Error en la resposta de la Aemet";
 
     public static void main(String[] args){
+        //Dades recollides de la previsió
+        int windAverage;
+        int windMax;
+        int rainProbability;
+        float rainAmount;
+        int stormProbability;
+        float snowAmount;
+        int snowProbability;
+        int temperature;
+        int thermalSens;
+        int relativeHumidity;
+
+        //Nivell d'alerta
+        int rainAlert;
+        int snowAlert;
+        int windAverageAlert;
+        int windMaxAlert;
+        int temperatureHighAlert;
+        int temperatureLowAlert;
+        String alertCondition;
+
+        AlertLevel alertLevel = new AlertLevel();
+
         try {
             //Declaración de variables con los datos de la petición a la Aemet.
-            String codiMunicipi = "43028";  //Código de la población de la Aemet
-            String dataBuscada = "2024-11-26T00:00:00"; //Fecha. (Previsión de 40 horas desde la fecha)
+            String codiMunicipi = "25086";  //Código de la población de la Aemet
+            String dataBuscada = "2024-11-28T00:00:00"; //Fecha. (Previsión de 40 horas desde la fecha)
             String horaBuscada = "02";      //Hora del dia. (Desde las 00 hasta las 23)
             String periodeBuscat ="0107";   //Franja horario. (Entre las 0107, las 0713, las 1319 y las 1901)
-
             //Si no encuentra la fecha
             boolean dataTrobada = false;
 
@@ -37,15 +59,26 @@ public class Main {
                     if (dia.getFecha().equals(dataBuscada)) {
                         dataTrobada= true;
                         System.out.println("Dades per la data: " + dataBuscada);
+                        System.out.println("---------------------------------------------------");
 
-                        //Buscar velocitat de vent mitja i ratxa màxima.
+                        //Buscar probabilitat de vent
                         if (dia.getVientoAndRachaMax() != null) {
                             for (AemetResponse.Prediccion.Dia.Viento vent : dia.getVientoAndRachaMax()) {
                                 if (horaBuscada.equals(vent.getPeriodo())) {
-                                    if (vent.getDireccion() != null && vent.getVelocidad() != null) {
-                                        System.out.println("Velocitat del vent: " + vent.getVelocidad());
-                                    } else if (vent.getValue() != null) {
-                                        System.out.println("Ratxa màxima: " + vent.getValue());
+                                    if (vent.getVelocidad() != null && !vent.getVelocidad().isEmpty()) {
+                                        windAverage = Integer.parseInt(vent.getVelocidad().get(0));
+                                        windAverageAlert = alertLevel.checkAverageWind(windAverage);
+                                        System.out.println("Velocitat mitja de vent: " + windAverage);
+                                        System.out.println("Nivell d'alerta per vent: " + windAverageAlert);
+                                        System.out.println("---------------------------------------------------");
+                                    }
+
+                                    if (vent.getValue() != null) {
+                                        windMax = Integer.parseInt(vent.getValue());
+                                        windMaxAlert = alertLevel.checkMaxWind(windMax);
+                                        System.out.println("Ratxa màxima de vent: " + windMax);
+                                        System.out.println("Nivell d'alerta por ratxa màxima: " + windMaxAlert);
+                                        System.out.println("---------------------------------------------------");
                                     }
                                 }
                             }
@@ -55,7 +88,9 @@ public class Main {
                         if (dia.getProbPrecipitacion() != null) {
                             for (AemetResponse.Prediccion.Dia.Probabilidad probabilitat : dia.getProbPrecipitacion()) {
                                 if (periodeBuscat.equals(probabilitat.getPeriodo())) {
+                                    rainProbability = Integer.parseInt(probabilitat.getValue());
                                     System.out.println("Probabilitat de pluja: " + probabilitat.getValue());
+                                    System.out.println("---------------------------------------------------");
                                 }
                             }
                         }
@@ -65,6 +100,10 @@ public class Main {
                             for (AemetResponse.Prediccion.Dia.Precipitacion precipitacio : dia.getPrecipitacion()) {
                                 if(horaBuscada.equals(precipitacio.getPeriodo())){
                                     System.out.println("Precipitació: " + precipitacio.getValue());
+                                    rainAmount = Float.parseFloat(precipitacio.getValue());
+                                    rainAlert = alertLevel.checkRain(rainAmount);
+                                    System.out.println("Nivell d'alerta per pluja: " + rainAlert);
+                                    System.out.println("---------------------------------------------------");
                                 }
                             }
                         }
@@ -73,7 +112,9 @@ public class Main {
                         if (dia.getProbTormenta() != null) {
                             for (AemetResponse.Prediccion.Dia.ProbTormenta tempesta : dia.getProbTormenta()) {
                                 if (periodeBuscat.equals(tempesta.getPeriodo())){
+                                    stormProbability = tempesta.getValue();
                                     System.out.println("Probabilitat de tempesta: " + tempesta.getValue());
+                                    System.out.println("---------------------------------------------------");
                                 }
                             }
                         }
@@ -82,7 +123,11 @@ public class Main {
                         if (dia.getNieve() != null) {
                             for (AemetResponse.Prediccion.Dia.Nieve neu : dia.getNieve()) {
                                 if (horaBuscada.equals(neu.getPeriodo())){
+                                    snowAmount = Float.parseFloat(neu.getValue());
+                                    snowAlert = alertLevel.checkSnow(snowAmount);
                                     System.out.println("Neu: " + neu.getValue());
+                                    System.out.println("Nivell d'alerta per neu: " + snowAlert);
+                                    System.out.println("---------------------------------------------------");
                                 }
                             }
                         }
@@ -91,7 +136,9 @@ public class Main {
                         if (dia.getProbNieve() != null) {
                             for (AemetResponse.Prediccion.Dia.probNieve probNeu : dia.getProbNieve()) {
                                 if (periodeBuscat.equals(probNeu.getPeriodo())){
+                                    snowProbability = Integer.parseInt(probNeu.getValue());
                                     System.out.println("Probabilitat de nevada: " + probNeu.getValue());
+                                    System.out.println("---------------------------------------------------");
                                 }
                             }
                         }
@@ -100,7 +147,13 @@ public class Main {
                         if (dia.getTemperatura() != null) {
                             for (AemetResponse.Prediccion.Dia.Temperatura temperatura : dia.getTemperatura()) {
                                 if (horaBuscada.equals(temperatura.getPeriodo())){
+                                    temperature = Integer.parseInt(temperatura.getValue());
+                                    temperatureHighAlert = alertLevel.checkHighTemperatureLevel(temperature);
+                                    temperatureLowAlert = alertLevel.checkLowTemperatureLevel(temperature);
                                     System.out.println("Temperatura: " + temperatura.getValue());
+                                    System.out.println("Nivell d'alerta per alta temperatura: " + temperatureHighAlert);
+                                    System.out.println("Nivell d'alerta per baixa temperatura: " + temperatureLowAlert);
+                                    System.out.println("---------------------------------------------------");
                                 }
                             }
                         }
@@ -109,7 +162,9 @@ public class Main {
                         if (dia.getSensTermica() != null) {
                             for (AemetResponse.Prediccion.Dia.sensTermica sensTermica : dia.getSensTermica()) {
                                 if (horaBuscada.equals(sensTermica.getPeriodo())){
+                                    thermalSens = Integer.parseInt(sensTermica.getValue());
                                     System.out.println("Sensació tèrmica: " + sensTermica.getValue());
+                                    System.out.println("---------------------------------------------------");
                                 }
                             }
                         }
@@ -118,7 +173,9 @@ public class Main {
                         if (dia.getHumedadRelativa() != null) {
                             for (AemetResponse.Prediccion.Dia.humedadRelativa humitatRelativa : dia.getHumedadRelativa()) {
                                 if (horaBuscada.equals(humitatRelativa.getPeriodo())){
+                                    relativeHumidity = Integer.parseInt(humitatRelativa.getValue());
                                     System.out.println("Humitat relativa: " + humitatRelativa.getValue());
+                                    System.out.println("---------------------------------------------------");
                                 }
                             }
                         }

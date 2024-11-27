@@ -297,7 +297,7 @@ public class AemetResponse {
                 private List<String> direccion;
                 private List<String> velocidad;
                 private String periodo;
-                private String value ;
+                private String value;
 
                 // Getters y Setters
                 public List<String> getDireccion() {
